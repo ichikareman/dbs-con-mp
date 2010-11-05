@@ -1,0 +1,229 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace dbs_con_mp
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        string constring = "server= ; database= ; uid=sa ; pwd=benilde";
+
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+        string search = "";
+        string itemtype = "";
+
+        private void nameSearch()
+        {
+                SqlDataAdapter da = new SqlDataAdapter(search, constring);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    listBox1.Items.Add(itemtype + " - " + dt.Rows[i][0].ToString() + " - " + dt.Rows[i][1].ToString());
+                }
+        } 
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            listBox1.Items.Clear();
+            if (checkBox3.Checked == false)
+            {
+                if (checkBox1.Checked)
+                {
+                    itemtype = "Product";
+                    search = "select prodName and prodID from prodTable where prodName like '%" + textBox1.Text + "%' order by prodName";
+                    nameSearch();
+                }
+                if (checkBox2.Checked)
+                {
+                    itemtype = "Ingredient";
+                    search = "select ingName and ingID from ingTable where ingName like '%" + textBox1.Text + "%' order by ingName";
+                    nameSearch();
+                }
+            }
+            else
+            {
+                if (checkBox1.Checked)
+                {
+                    itemtype = "Product";
+                    search = "select prodName and prodID from prodTable where prodID " + textBox4.Text + " " + textBox1.Text + " order by prodID";
+                    nameSearch();
+                }
+                if (checkBox2.Checked)
+                {
+                    itemtype = "Ingredient";
+                    search = "select ingName and ingID from ingTable where ingID " + textBox4.Text + " " + textBox1.Text + "order by ingID";
+                    nameSearch();
+                }
+            }
+        }
+        
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (checkBox3.Checked == false)
+            {
+                listBox1.Items.Clear();
+                textBox1.Clear();
+                if (checkBox1.Checked)
+                {
+                    itemtype = "Product";
+                    search = "select prodName from prodTable order by prodName";
+                    nameSearch();
+                }
+                if (checkBox2.Checked)
+                {
+                    itemtype = "Ingredient";
+                    search = "select ingName from ingTable order by ingName";
+                    nameSearch();
+                }
+            }
+            else
+            {
+                listBox1.Items.Clear();
+                textBox1.Clear();
+                if (checkBox1.Checked)
+                {
+                    itemtype = "Product";
+                    search = "select prodName from prodTable order by prodID";
+                    nameSearch();
+                }
+                if (checkBox2.Checked)
+                {
+                    itemtype = "Ingredient";
+                    search = "select ingName from ingTable order by ingID";
+                    nameSearch();
+                }
+            }
+        }
+
+        string info = "";
+        string selitemdesc = "";
+
+        private void descSearch()
+        {
+            SqlDataAdapter da = new SqlDataAdapter(info, constring);
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+            //remark: code not sure
+            selitemdesc = dt.Rows[0][0].ToString();
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string selitem = listBox1.SelectedItem.ToString();
+            
+            if (selitem.Substring(0, 1) == "I")
+            {
+                textBox3.Clear();
+                textBox4.Clear();
+                //dataGridView1
+                string ingName = selitem.Substring(selitem.IndexOf("-") + 2);
+                ingName = selitem.Substring(selitem.IndexOf("-") + 2);
+                info = "select ingDesc from ingTable where ingName = '"+ ingName +"'";
+                descSearch();
+                textBox2.Text = selitemdesc;
+            }
+            else
+            {
+                string prodName = selitem.Substring(selitem.IndexOf("-") + 2);
+                prodName = selitem.Substring(selitem.IndexOf("-") + 2);
+                //gets the name from list box
+                info = "select prodDesc from prodTable where prodName = '" + prodName + "'";
+                descSearch();
+                textBox2.Text = selitemdesc;
+                //sets item description to display
+
+                info = "select prodID from prodTable where prodName = '" + prodName + "'";
+                SqlDataAdapter dax = new SqlDataAdapter(info, constring);
+                DataTable dtx = new DataTable();
+                dax.Fill(dtx);
+                int prodID = int.Parse(dtx.Rows[0][0].ToString());
+                //gets the prodID of selected
+
+                info = "select ingID, ingQuant from combTable where prodID = " + prodID;
+                SqlDataAdapter da2 = new SqlDataAdapter(info, constring);
+                DataTable dt2 = new DataTable();
+                da2.Fill(dt2);
+                for (int i = 0; i < dt2.Rows.Count; i++)
+			    {
+                    info = "select ingName from ingTable where ingID = " + dt2.Rows[i][0].ToString();
+                    SqlDataAdapter da3 = new SqlDataAdapter(info, constring);
+                    DataTable dt3 = new DataTable();
+                    da3.Fill(dt3);
+                    dt2.Rows[i][0] = dt3.Rows[0][0].ToString();
+			    }
+                dataGridView1.DataSource = dt2;
+
+                info = "select prodQuant from combTable where prodID = " + prodID;
+                SqlDataAdapter da4 = new SqlDataAdapter(info, constring);
+                DataTable dt4 = new DataTable();
+                da4.Fill(dt4);
+                textBox4.Text = dt4.Rows[0][0].ToString();
+            }
+        }
+        //in process
+        private void button3_Click(object sender, EventArgs e)
+        {
+            textBox1.Clear(); textBox2.Clear(); textBox3.Clear();
+            listBox1.Items.Clear();
+            //dataGridView1
+            checkBox1.Checked = false; checkBox2.Checked = false;
+        }
+
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            string ingdesc = "select ingDesc from ingTable where ingName = '"+dataGridView1.SelectedRows[0].Cells[0].Value.ToString()+"'";
+            SqlDataAdapter da = new SqlDataAdapter(ingdesc, constring);
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+            textBox3.Text = dt.Rows[0][0].ToString();
+        }
+
+        private void checkBox3_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox3.Checked == true)
+                button4.Enabled = true;
+            else
+                button4.Enabled = false;
+        }
+
+        int than = 0;
+        private void button4_Click(object sender, EventArgs e)
+        {
+            than++;
+            if (than >= 5)
+            {
+                than = 0;
+            }
+
+            if (than == 0)
+                button4.Text = ">";
+            else if (than == 1)
+                button4.Text = "<";
+            else if (than == 2)
+                button4.Text = "=";
+            else if (than == 3)
+                button4.Text = ">=";
+            else if (than == 4)
+                button4.Text = "<=";
+        }
+
+
+
+    }
+}
